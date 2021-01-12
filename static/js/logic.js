@@ -1,9 +1,11 @@
 
 //Create variable for map
 
+function createMap(earthquakes) {
+
 var myMap = L.map("mapid", {
     center: [39.82, -98.58],
-    zoom: 5
+    zoom: 4
 });
 
 
@@ -17,24 +19,45 @@ L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
   accessToken: API_KEY
 }).addTo(myMap);
 
+//Add layer control to the map
+
+// L.control.layers(baseMaps, overlayMaps, {
+//     collapsed: false
+//   }).addTo(myMap);
+
+}
+
+
 //Create variable for json url (Earthquakes over 1.0 past day)
 
 var url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_day.geojson"
 
 //Grab the data with d3
 
-d3.json(url, function(response) {
-    var markers = L.markerClusterGroup();
+function createMarkers(response) {
+    console.log(response);
+    var earthquakes = L.geoJSON(response.features);
+    console.log(earthquakes);
 
-    for (var i = 0; i < response.length; i++) {
-        //Set the data location property to a variable
-        var location = response[i].features.geometry;
+    var markers = [];
 
-        if (location) {
-            markers.addLayer(L.marker([location.coordinates[1], location.coordinates[0]])
-            .bindPopup(response[i].features.title));
+    for (var i = 0; i < response.features.length; i++) {
+        //Set the earthquake location property to a variable
+        var earthquake = L.geoJSON(earthquakes[i]);
+        console.log(earthquake);
+        if (earthquake) {
+            var marker = L.circleMarker([earthquake.geometry.coordinates[1], earthquake.geometry.coordinates[1]])
+            .bindPopup("<h3>Location:" + earthquake.properties.place);
+            markers.push(marker);
+            console.log(markers);
+            //Add magnitude as Size: earthquake.properties.mag
+            //Add depth of earthquake as color: earthquake.geometry.coordinates[2]
         }
     }
 
-    myMap.addLayer(markers);
-})
+    createMap(L.layerGroup(markers));
+}
+
+//Office hours: why do we sometimes add a layer and other times not
+
+d3.json(url, createMarkers);
